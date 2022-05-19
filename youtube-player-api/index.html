@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Youtube Player API</title>
+	<style>
+		html,
+		body,
+		#root,
+		#main-content {
+			margin: 0;
+			padding: 0;
+		}
+	</style>
+	<script type="module">
+		import init, { YoutubePlayer, greetWorld } from './pkg/youtube-player-api.js';
+
+		// load module via promise syntax
+		/*init().then((module) => {
+			console.log('module loaded', module);
+		});*/
+
+		/**
+		 * Load and initialize library.
+		 *
+		 * The `default` import is an initialization function which
+		 * will "boot" the module and make it ready to use. Currently browsers
+		 * don't support natively imported WebAssembly as an ES module.
+		 *
+		 * @link https://rustwasm.github.io/wasm-bindgen/examples/without-a-bundler.html
+		 */
+		(async () => {
+			const module = await init();
+			console.log('module loaded', module);
+		})();
+	</script>
+</head>
+<body>
+	<div id="main-content">
+		<iframe id="yt-player" type="text/html"
+			width="640"
+			height="360"
+			frameborder="0"
+			src="http://www.youtube.com/embed/cE0wfjsybIQ?enablejsapi=1&autoplay=1&controls=1"
+			sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+			allow="autoplay"
+			allowfullscreen=true>
+		</iframe>
+
+		<br />
+		<br />
+
+		<button onclick="void(0);">play video</button>
+		<button onclick="void(0);">pause video</button>
+		<button onclick="void(0);">stop video</button>
+		<button onclick="void(0);">change video</button>
+		<button onclick="console.log(0);">log player state</button>
+	</div>
+
+	<noscript>This page requires JavaScript!</noscript>
+</body>
+</html>

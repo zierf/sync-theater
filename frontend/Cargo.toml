@@ -1,0 +1,16 @@
+[package]
+name = "frontend"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+gloo = "0.7.0"
+serde-wasm-bindgen = "0.4.3"
+wasm-bindgen = "0.2.80"
+wasm-bindgen-futures = "0.4.30"
+yew = "0.19.3"
+yew-interop = { git="https://github.com/Madoshakalaka/yew-interop.git", branch="master", features=["yew-stable", "script"] }
+yew-router = "0.16.0"
+youtube-player-npm = { path = "../youtube-player-npm" }

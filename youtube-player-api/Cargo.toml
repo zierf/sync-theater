@@ -1,0 +1,20 @@
+[package]
+name = "youtube-player-api"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]
+gloo = "0.7.0"
+js-sys = "0.3.57"
+wasm-bindgen = "0.2.80"
+wasm-bindgen-futures = "0.4.30"
+web-sys = "0.3.57"
+
+[profile.release]
+opt-level = "s"
+lto = true
