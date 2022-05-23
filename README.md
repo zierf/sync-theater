@@ -65,8 +65,16 @@ wasm-pack build --out-name youtube-player-api --target web youtube-player-api
 
 ### Watch file changes for autmatic library rebuilds
 
+Release version
 ```SH
 cargo watch --no-gitignore -C "./youtube-player-api" -i ".gitignore" -i "pkg" -s "wasm-pack build --out-name youtube-player-api --target web"
+```
+
+Debug version  
+Feature `std` enables stack traces from Rust for errors in browser console.
+Enable it to replace cryptic error `RuntimeError: unreachable executed` with a proper strack trace.
+```SH
+cargo watch --no-gitignore -C "./youtube-player-api" -i ".gitignore" -i "pkg" -s "wasm-pack build --out-name youtube-player-api --target web --features=std --dev"
 ```
 
 ### Clean build files

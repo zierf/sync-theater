@@ -8,12 +8,36 @@ edition = "2021"
 [lib]
 crate-type = ["rlib", "cdylib"]
 
+[features]
+# default = ["dep:wee_alloc"]
+default = []
+std = ["dep:console_error_panic_hook"]
+
 [dependencies]
-gloo = "0.7.0"
+console_error_panic_hook = { version="0.1.7", optional=true }
+# gloo = "0.7.0"
 js-sys = "0.3.57"
+serde = { version = "1.0.137", features = ["derive"] }
+# serde_json = "1.0.81"
+serde-wasm-bindgen = "0.4.3"
 wasm-bindgen = "0.2.80"
 wasm-bindgen-futures = "0.4.30"
-web-sys = "0.3.57"
+# wee_alloc = { version="0.4.5", optional=true }
+
+[dependencies.web-sys]
+version = "0.3.57"
+features = [
+    "console",
+    "Document",
+    "DomImplementation",
+    "Element",
+    "HtmlCollection",
+    "HtmlBodyElement",
+    "HtmlElement",
+    "HtmlHeadElement",
+    "Node",
+    "Window"
+]
 
 [profile.release]
 opt-level = "s"
