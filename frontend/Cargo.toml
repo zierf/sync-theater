@@ -5,12 +5,23 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+# default = ["dep:wee_alloc"]
+default = ["stack_trace"]
+stack_trace = ["dep:console_error_panic_hook"]
+
 [dependencies]
+console_error_panic_hook = { version="0.1.7", optional=true }
 gloo = "0.7.0"
+js-sys = "0.3.57"
 serde-wasm-bindgen = "0.4.3"
 wasm-bindgen = "0.2.80"
 wasm-bindgen-futures = "0.4.30"
 yew = "0.19.3"
 yew-interop = { git="https://github.com/Madoshakalaka/yew-interop.git", branch="master", features=["yew-stable", "script"] }
 yew-router = "0.16.0"
-youtube-player-npm = { path = "../youtube-player-npm" }
+youtube-player-api = { path = "../youtube-player-api" }
+
+[profile.release]
+opt-level = "s"
+lto = true
