@@ -107,7 +107,7 @@ Build example page in `./dist` folder.
 npm run build
 ```
 
-The example can also be served with a local development server under address `http://localhost:8080`.
+The example can also be served with a local development server under address `http://localhost:4000`.
 
 ```SH
 npm run serve

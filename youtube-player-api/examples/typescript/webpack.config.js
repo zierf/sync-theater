@@ -41,6 +41,13 @@ const config = {
       scriptLoading: 'module'
     })
   ],
+  devServer: {
+    static: {
+      directory: path.join(__dirname, 'dist'),
+    },
+    compress: true,
+    port: 4000,
+  },
   mode: 'development',
   experiments: {
     asyncWebAssembly: true,
