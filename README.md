@@ -14,6 +14,8 @@ cargo install trunk
 
 ### Serve frontend
 
+Serve frontend with a local development server under `http://localhost:8080`.
+
 ```SH
 trunk serve
 ```
@@ -40,6 +42,8 @@ cargo clean
 
 Build module *.wasm*, JS bindings and TS typings are put in folder `youtube-player-api/pkg`.
 
+Most commands are usable from project root folder, except building and serving the example HTML page.
+
 ### Prerequisites
 
 Install `wasm-pack` to build *.wasm* library for usage outside of yew frontend.
@@ -52,38 +56,65 @@ Enable `cargo-watch` to rebuild *.wasm* library during development.
 cargo install cargo-watch
 ```
 
-Use `basic-http-server` to serve local demo HTML page.
-```SH
-cargo install basic-http-server
-```
+Install `NodeJS` to build and serve the example HTML page.
 
 ### Build library for browser
 
+Checkout [Deploying Rust and WebAssembly](https://rustwasm.github.io/docs/wasm-bindgen/reference/deployment.html) to see different deployment options.
+To load the library directly in the browser, compile with the following command and follow the description [Without a Bundler](https://rustwasm.github.io/docs/wasm-bindgen/examples/without-a-bundler.html) to load it in your page.
+
 ```SH
-wasm-pack build --out-name youtube-player-api --target web youtube-player-api
+wasm-pack build --target web youtube-player-api
 ```
 
 ### Watch file changes for autmatic library rebuilds
 
-Release version
+**Release version**
 ```SH
-cargo watch --no-gitignore -C "./youtube-player-api" -i ".gitignore" -i "pkg" -s "wasm-pack build --out-name youtube-player-api --target web"
+cargo watch --no-gitignore -C "./youtube-player-api" -i ".gitignore" -i "pkg" -s "wasm-pack build --target web"
 ```
 
-Debug version  
+**Debug version**  
 Feature `std` enables stack traces from Rust for errors in browser console.
 Enable it to replace cryptic error `RuntimeError: unreachable executed` with a proper strack trace.
 ```SH
-cargo watch --no-gitignore -C "./youtube-player-api" -i ".gitignore" -i "pkg" -s "wasm-pack build --out-name youtube-player-api --target web --features=std --dev"
+cargo watch --no-gitignore -C "./youtube-player-api" -i ".gitignore" -i "pkg" -s "wasm-pack build --target web --features=std --dev"
 ```
 
 ### Clean build files
+
 ```SH
 rm -r ./youtube-player-api/pkg
 ```
 
-### Serve local demo HTML page
+### Example HTML page
+
+The example page has to be build from it's own folder.
 
 ```SH
-basic-http-server --addr "127.0.0.1:4000" ./youtube-player-api
+cd ./youtube-player-api/examples/typescript
+```
+
+Make sure to install the necessary development dependencies before running the first build.
+
+```SH
+npm install
+```
+
+Build example page in `./dist` folder.
+
+```SH
+npm run build
+```
+
+The example can also be served with a local development server under address `http://localhost:8080`.
+
+```SH
+npm run serve
+```
+
+Clean build files.
+
+```SH
+npm run clean
 ```

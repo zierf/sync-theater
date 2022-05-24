@@ -8,9 +8,9 @@ use core::{
     sync::atomic::{AtomicBool, Ordering},
 };
 
-pub use self::player_events::YtPlayerEvents;
+pub use self::player_events::PlayerEvents;
 pub use self::player_options::{PlayerOptions, PlayerVars};
-pub use self::player_state::YtPlayerState;
+pub use self::player_state::PlayerState;
 
 use self::api::PlayerInstance;
 use alloc::{boxed::Box, string::String, sync::Arc};
@@ -39,7 +39,7 @@ impl YtPlayer {
         let is_ready_handle = Arc::new(AtomicBool::new(false));
         let is_ready_closure = is_ready_handle.clone();
 
-        let player_options = options;
+        let player_options: Object = options;
         let checkable_options = JsValue::from(player_options.clone());
 
         let mut options_object = Object::new();
@@ -127,7 +127,7 @@ impl YtPlayer {
     }
 
     pub fn on(&self, event_name: String, handler_fn: JsValue) {
-        let handler_name = YtPlayerEvents::get_handler_name(event_name);
+        let handler_name = PlayerEvents::get_handler_name(event_name);
         self.run_player(|instance| instance.add_event_listener(handler_name.into(), handler_fn));
     }
 
@@ -167,7 +167,7 @@ impl YtPlayer {
             return from_value(state).unwrap();
         }
 
-        YtPlayerState::UNSTARTED
+        PlayerState::UNSTARTED
     }
 }
 

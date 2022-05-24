@@ -1,8 +1,9 @@
+// #[wasm_bindgen(typescript_type = "PlayerState")]
 #[non_exhaustive]
 #[derive(Debug, PartialEq)]
-pub struct YtPlayerState;
+pub struct PlayerState;
 
-impl YtPlayerState {
+impl PlayerState {
     pub const UNSTARTED: i32 = -1;
     pub const ENDED: i32 = 0;
     pub const PLAYING: i32 = 1;

@@ -29,13 +29,13 @@ version = "0.3.57"
 features = [
     "console",
     "Document",
-    "DomImplementation",
+    # "DomImplementation",
     "Element",
     "HtmlCollection",
-    "HtmlBodyElement",
-    "HtmlElement",
-    "HtmlHeadElement",
-    "Node",
+    # "HtmlBodyElement",
+    # "HtmlElement",
+    # "HtmlHeadElement",
+    # "Node",
     "Window"
 ]
 

@@ -3,11 +3,12 @@ use alloc::{
     string::{String, ToString},
 };
 
+// #[wasm_bindgen(typescript_type = "PlayerEvents")]
 #[non_exhaustive]
 #[derive(Debug, PartialEq)]
-pub struct YtPlayerEvents;
+pub struct PlayerEvents;
 
-impl YtPlayerEvents {
+impl PlayerEvents {
     pub const READY: &'static str = "ready";
     pub const PLAYBACK_QUALITY_CHANGE: &'static str = "playbackQualityChange";
     pub const STATE_CHANGE: &'static str = "stateChange";

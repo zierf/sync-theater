@@ -3,6 +3,7 @@ use js_sys::Object;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::{JsCast, JsValue};
 
+// #[wasm_bindgen(typescript_type = "PlayerVars")]
 #[derive(Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct PlayerVars {
     pub autoplay: Option<i32>,
@@ -27,6 +28,7 @@ impl PlayerVars {
     }
 }
 
+// #[wasm_bindgen(typescript_type = "PlayerOptions")]
 #[derive(Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct PlayerOptions {
     #[serde(rename = "videoId")]

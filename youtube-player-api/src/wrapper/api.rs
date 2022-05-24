@@ -2,15 +2,19 @@ use js_sys::JsString;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-extern {
+extern "C" {
+    #[wasm_bindgen(typescript_type = "YtGlobal")]
+    pub type YtGlobalObject;
+
+    #[wasm_bindgen(typescript_type = "YoutubePlayerInstance")]
     pub type PlayerInstance;
 
     #[wasm_bindgen(method, js_name = addEventListener)]
     pub fn add_event_listener(this: &PlayerInstance, event: JsString, listener: JsValue);
 
     // FIXME removeEventListener(...) isn't working as expected
-    // #[wasm_bindgen(method, js_name = removeEventListener)]
-    // pub fn remove_event_listener(this: &PlayerInstance, event: JsString, listener: JsValue);
+    #[wasm_bindgen(method, js_name = removeEventListener)]
+    pub fn remove_event_listener(this: &PlayerInstance, event: JsString, listener: JsValue);
 
     #[wasm_bindgen(method, js_name = playVideo)]
     pub fn play_video(this: &PlayerInstance);
@@ -29,8 +33,8 @@ extern {
 }
 
 #[wasm_bindgen(typescript_custom_section)]
-const YT_API_TYPINGS: &'static str = r#"
-export enum YtPlayerState {
+const PLAYER_STATE: &'static str = r#"
+export enum PlayerState {
   UNSTARTED = -1,
   ENDED = 0,
   PLAYING = 1,
@@ -38,13 +42,30 @@ export enum YtPlayerState {
   BUFFERING = 3,
   CUED = 5,
 }
+"#;
 
-export interface YtPlayerVars {
+#[wasm_bindgen(typescript_custom_section)]
+const PLAYER_VARS: &'static str = r#"
+export interface PlayerVars {
   autoplay?: 0 | 1,
   controls?: 0 | 1,
 }
+"#;
 
-interface YtPlayerEvents {
+#[wasm_bindgen(typescript_custom_section)]
+const PLAYER_OPTIONS: &'static str = r#"
+export interface PlayerOptions {
+  videoId?: string,
+  width?: number,
+  height?: number,
+  playerVars?: PlayerVars,
+  events?: PlayerEvents,
+}
+"#;
+
+#[wasm_bindgen(typescript_custom_section)]
+const PLAYER_EVENTS: &'static str = r#"
+interface PlayerEvents {
   onReady?: () => void,
   onError?: () => void,
   onStateChange?: () => void,
@@ -52,23 +73,123 @@ interface YtPlayerEvents {
   onPlaybackRateChange?: () => void,
   onApiChange?: () => void,
 }
+"#;
 
-export interface YtPlayerOptions {
-  videoId?: string,
-  width?: number,
-  height?: number,
-  playerVars?: YtPlayerVars,
-  events?: YtPlayerEvents,
+#[wasm_bindgen(typescript_custom_section)]
+const YT_Global: &'static str = r#"
+interface YouTubePlayerConstructor {
+  new (playerId: string, options?: PlayerOptions): YoutubePlayerInstance
 }
 
-interface YtGlobalObject {
-  Player: (playerId: string, options?: YtPlayerOptions) => void,
+interface YtGlobal {
+  Player: YouTubePlayerConstructor,
   PlayerState: {
-    [key in keyof typeof YtPlayerState]: number;
+    [key in keyof typeof PlayerState]: number;
   },
 }
 
 declare global {
-  var YT: YtGlobalObject;
+  var YT: YtGlobal;
+}
+"#;
+
+// https://github.com/gajus/youtube-player/issues/78
+#[wasm_bindgen(typescript_custom_section)]
+const YOUTUBE_PLAYER: &'static str = r#"
+export interface YoutubePlayerInstance {
+  addEventListener(event: string, listener: (event: CustomEvent) => void): void;
+  destroy(): void;
+  getAvailablePlaybackRates(): ReadonlyArray<number>;
+  getAvailableQualityLevels(): ReadonlyArray<string>;
+  getCurrentTime(): number;
+  getDuration(): number;
+  getIframe(): HTMLIFrameElement;
+  getOption(module: string, option: string): any;
+  getOptions(): string[];
+  getOptions(module: string): object;
+  setOption(module: string, option: string, value: any): void;
+  setOptions(): void;
+  cuePlaylist(
+    playlist: string | ReadonlyArray<string>,
+    index?: number,
+    startSeconds?: number,
+    suggestedQuality?: string,
+  ): void;
+  cuePlaylist(playlist: {
+    listType: string,
+    list?: string | undefined,
+    index?: number | undefined,
+    startSeconds?: number | undefined,
+    suggestedQuality?: string | undefined,
+  }): void;
+  loadPlaylist(
+    playlist: string | ReadonlyArray<string>,
+    index?: number,
+    startSeconds?: number,
+    suggestedQuality?: string,
+  ): void;
+  loadPlaylist(playlist: {
+    listType: string,
+    list?: string | undefined,
+    index?: number | undefined,
+    startSeconds?: number | undefined,
+    suggestedQuality?: string | undefined,
+  }): void;
+  getPlaylist(): ReadonlyArray<string>;
+  getPlaylistIndex(): number;
+  getPlaybackQuality(): string;
+  getPlaybackRate(): number;
+  getPlayerState(): PlayerState;
+  getVideoEmbedCode(): string;
+  getVideoLoadedFraction(): number;
+  getVideoUrl(): string;
+  getVolume(): number;
+  cueVideoById(videoId: string, startSeconds?: number, suggestedQuality?: string): void;
+  cueVideoById(video: {
+    videoId: string,
+    startSeconds?: number | undefined,
+    endSeconds?: number | undefined,
+    suggestedQuality?: string | undefined,
+  }): void;
+  cueVideoByUrl(mediaContentUrl: string, startSeconds?: number, suggestedQuality?: string): void;
+  cueVideoByUrl(video: {
+    mediaContentUrl: string,
+    startSeconds?: number | undefined,
+    endSeconds?: number | undefined,
+    suggestedQuality?: string | undefined,
+  }): void;
+  loadVideoByUrl(mediaContentUrl: string, startSeconds?: number, suggestedQuality?: string): void;
+  loadVideoByUrl(video: {
+    mediaContentUrl: string,
+    startSeconds?: number | undefined,
+    endSeconds?: number | undefined,
+    suggestedQuality?: string | undefined,
+  }): void;
+  loadVideoById(videoId: string, startSeconds?: number, suggestedQuality?: string): void;
+  loadVideoById(video: {
+    videoId: string,
+    startSeconds?: number | undefined,
+    endSeconds?: number | undefined,
+    suggestedQuality?: string | undefined,
+  }): void;
+  isMuted(): boolean;
+  mute(): void;
+  nextVideo(): void;
+  pauseVideo(): void;
+  playVideo(): void;
+  playVideoAt(index: number): void;
+  previousVideo(): void;
+  removeEventListener(event: string, listener: (event: CustomEvent) => void): void;
+  seekTo(seconds: number, allowSeekAhead: boolean): void;
+  setLoop(loopPlaylists: boolean): void;
+  setPlaybackQuality(suggestedQuality: string): void;
+  setPlaybackRate(suggestedRate: number): void;
+  setShuffle(shufflePlaylist: boolean): void;
+  setSize(width: number, height: number): object;
+  setVolume(volume: number): void;
+  stopVideo(): void;
+  unMute(): void;
+  //on(eventType: 'stateChange', listener: (event: CustomEvent & { data: number }) => void): void;
+  //on(eventType: EventType, listener: (event: CustomEvent) => void): void;
 }
 "#;

@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use gloo::{console::log, timers::future::TimeoutFuture};
 use wasm_bindgen::{prelude::Closure, JsValue};
-use wasm_bindgen_futures::spawn_local;
+use wasm_bindgen_futures::{spawn_local, JsFuture};
 use yew::prelude::*;
-use youtube_player_api::{init_yt_api, PlayerOptions, PlayerVars, YtPlayer, YtPlayerEvents};
+use youtube_player_api::{init_yt_api, PlayerEvents, PlayerOptions, PlayerVars, YtPlayer};
 
 pub enum Msg {
     ActivatePlayer,
@@ -50,7 +50,7 @@ impl Component for App {
 
     fn create(_ctx: &Context<Self>) -> Self {
         // load Youtube Player API scripts
-        init_yt_api().expect("Couldn't initialize Youtube Player API");
+        let _initialized = JsFuture::from(init_yt_api());
 
         // let handle_ready = self::add_ready_event_handler(|_player_instance: PlayerInstance| {
         //     log!("player ready");
@@ -117,9 +117,7 @@ impl Component for App {
                     });
 
                 self.player_instance.as_ref().as_ref().unwrap().on(
-                    YtPlayerEvents::get_handler_name(
-                        YtPlayerEvents::PLAYBACK_QUALITY_CHANGE.into(),
-                    ),
+                    PlayerEvents::get_handler_name(PlayerEvents::PLAYBACK_QUALITY_CHANGE.into()),
                     quality_change_handler.into_js_value(),
                 );
 
