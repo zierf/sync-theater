@@ -1,12 +1,17 @@
-const path = require('path');
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
-const webpack = require('webpack');
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+import WasmPackPlugin from '@wasm-tool/wasm-pack-plugin';
+import webpack from 'webpack';
 
-module.exports = {
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const config = {
   entry: './index.ts',
-  devtool: 'inline-source-map',
+  devtool: process.env.SOURCE_MAP ? 'inline-source-map' : 'hidden-source-map',
   module: {
     rules: [
       {
@@ -25,10 +30,10 @@ module.exports = {
   },
   plugins: [
     new WasmPackPlugin({
-      crateDirectory: path.resolve(__dirname, "../../"),
+      crateDirectory: path.resolve(__dirname, '../../'),
       extraArgs: '--target bundler',
-      outDir: "./pkg",
-      outName: "youtube_player_api",
+      outDir: './pkg',
+      outName: 'youtube_player_api',
     }),
     new HtmlWebpackPlugin({
       inject: 'head',
@@ -43,3 +48,5 @@ module.exports = {
     topLevelAwait: true
   }
 };
+
+export default config;
