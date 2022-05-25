@@ -16,12 +16,10 @@
 	</style>
 	<script>
 		function onYouTubeIframeAPIReady() {
-			console.log('Preserve existent onYouTubeIframeAPIReady() and call it after loading module.');
+			console.log('Preserve existent onYouTubeIframeAPIReady() and call it after loading Youtube Player API.');
 		}
 
-		const playerReady = new Promise((resolve, reject) => {
-			globalThis.resolveReadyFn = resolve;
-		});
+		ytPlayer = undefined;
 	</script>
 </head>
 <body>
@@ -41,11 +39,11 @@
 		<br />
 		<br />
 
-		<button onclick="playerReady.then(() => ytPlayer.playVideo());">play video</button>
-		<button onclick="playerReady.then(() => ytPlayer.pauseVideo());">pause video</button>
-		<button onclick="playerReady.then(() => ytPlayer.stopVideo());">stop video</button>
-		<button onclick="playerReady.then(() => ytPlayer.changeVideo('bS4Q-WWyl3Q'));">change video</button>
-		<button onclick="playerReady.then(() => console.log(ytPlayer.getPlayerState()));">log player state</button>
+		<button onclick="ytPlayer?.playVideo();">play video</button>
+		<button onclick="ytPlayer?.pauseVideo();">pause video</button>
+		<button onclick="ytPlayer?.stopVideo();">stop video</button>
+		<button onclick="ytPlayer?.changeVideo('bS4Q-WWyl3Q');">change video</button>
+		<button onclick="console.log(ytPlayer?.getPlayerState());">log player state</button>
 	</div>
 
 	<noscript>This page requires JavaScript!</noscript>

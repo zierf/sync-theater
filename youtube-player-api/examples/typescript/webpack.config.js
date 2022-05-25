@@ -31,7 +31,7 @@ const config = {
   plugins: [
     new WasmPackPlugin({
       crateDirectory: path.resolve(__dirname, '../../'),
-      extraArgs: '--target bundler',
+      extraArgs: '--target bundler --features=std',
       outDir: './pkg',
       outName: 'youtube_player_api',
     }),

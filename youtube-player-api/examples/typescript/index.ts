@@ -1,9 +1,8 @@
-import { initYtApi, YoutubePlayer, PlayerOptions } from '../../pkg/youtube_player_api';
+import { initYtApi, YoutubePlayer, PlayerOptions, YoutubePlayerInstance } from '../../pkg/youtube_player_api';
 
 declare global {
   interface Window {
-    ytPlayer?: YoutubePlayer;
-    resolveReadyFn?: (event: CustomEvent) => void;
+    ytPlayer?: Promise<YoutubePlayer>;
   }
 }
 
@@ -19,10 +18,10 @@ declare global {
 (async () => {
   // load and initialize youtube player api
   await initYtApi();
-  console.log('module loaded');
+  console.log('Module successfully initialized');
 
   setTimeout(async () => {
-    const ytPlayer = new YoutubePlayer('yt-player', {
+    const ytPlayer = await YoutubePlayer.create('yt-player', {
       videoId: 'cE0wfjsybIQ',
       width: 640,
       height: 360,
@@ -31,15 +30,13 @@ declare global {
         controls: 1,
       },
       events: {
-        onReady: (event: CustomEvent) => {
-          window.resolveReadyFn?.(event);
-          delete window.resolveReadyFn;
-
-          console.log('Preserve existent onReady() handler.', event);
+        onReady: (target: YoutubePlayerInstance) => {
+          console.log('Preserve existent onReady() handler.', target);
         },
       }
     } as PlayerOptions);
 
+    // set player in global namespace to control it via buttons
     window.ytPlayer = ytPlayer;
 
     ytPlayer.on('stateChange', (event: CustomEvent) => {

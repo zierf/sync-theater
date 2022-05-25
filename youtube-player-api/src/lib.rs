@@ -5,6 +5,9 @@ extern crate alloc;
 mod wrapper;
 
 use alloc::boxed::Box;
+use alloc::sync::Arc;
+use core::cell::RefCell;
+
 use js_sys::Promise;
 use js_sys::{Array, Function, Reflect};
 use serde_wasm_bindgen::to_value;
@@ -29,7 +32,8 @@ pub fn init_yt_api() -> Promise {
 
     let window = window().unwrap();
 
-    let api_ready = Promise::resolve(&0_i32.into());
+    // create promise to signal when library has successfully initialized youtube player api
+    let (api_ready, init_resolver, _) = controllable_promise();
 
     // check and save if there's already a ready handler function
     let previous_ready_function =
@@ -38,7 +42,15 @@ pub fn init_yt_api() -> Promise {
     // create ready handler function specific for library
     let new_handler = Closure::wrap(Box::new(move || {
         // execute custom code for library
-        console::log_1(&"YoutubePlayer ready".into());
+        console::log_1(&"Youtube Player API ready".into());
+
+        // signal api loading complete
+        init_resolver
+            .borrow()
+            .as_ref()
+            .unwrap()
+            .apply(&JsValue::null(), &Array::new())
+            .unwrap();
 
         // call and restore previous ready handler function
         // after everything is done
@@ -82,4 +94,23 @@ pub fn init_yt_api() -> Promise {
         .unwrap();
 
     api_ready
+}
+
+fn controllable_promise() -> (
+    Promise,
+    Arc<RefCell<Option<Function>>>,
+    Arc<RefCell<Option<Function>>>,
+) {
+    let resolve_function: Arc<RefCell<Option<Function>>> = Arc::new(RefCell::new(None));
+    let reject_function: Arc<RefCell<Option<Function>>> = Arc::new(RefCell::new(None));
+
+    let promise_resolve = resolve_function.clone();
+    let promise_reject = reject_function.clone();
+
+    let promise = Promise::new(&mut move |resolve, reject| {
+        promise_resolve.replace(Some(resolve));
+        promise_reject.replace(Some(reject));
+    });
+
+    (promise, resolve_function, reject_function)
 }
