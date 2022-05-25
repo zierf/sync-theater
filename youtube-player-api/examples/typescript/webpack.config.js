@@ -41,6 +41,14 @@ const config = {
       scriptLoading: 'module'
     })
   ],
+  watchOptions: {
+    aggregateTimeout: 200,
+    poll: 1000,
+    ignored: [
+      '**/node_modules',
+      //path.posix.resolve(__dirname, '../../pkg'),
+    ],
+  },
   devServer: {
     static: {
       directory: path.join(__dirname, 'dist'),
