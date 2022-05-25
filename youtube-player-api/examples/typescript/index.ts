@@ -31,7 +31,7 @@ declare global {
       },
       events: {
         onReady: (target: YoutubePlayerInstance) => {
-          console.log('Preserve existent onReady() handler.', target);
+          console.log('Preserve custom player onReady() handler.');
         },
       }
     } as PlayerOptions);

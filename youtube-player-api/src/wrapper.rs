@@ -5,6 +5,7 @@ mod player_state;
 
 use alloc::{boxed::Box, rc::Rc, string::String};
 use core::{
+    array::IntoIter,
     cell::RefCell,
     ops::Deref,
     sync::atomic::{AtomicBool, Ordering},
@@ -88,11 +89,8 @@ impl YtPlayer {
                 .unwrap()
                 .dyn_ref::<Function>()
             {
-                let params = Array::new();
-                params.push(&player_instance);
-
                 ready_handler_to_call
-                    .apply(&JsValue::null(), &params)
+                    .apply(&JsValue::null(), &Array::from_iter([player_instance]))
                     .unwrap();
             }
         });
@@ -109,9 +107,9 @@ impl YtPlayer {
             &event_options,
         );
 
-        let params = Array::new();
-        params.push(&to_value(player_id).unwrap());
-        params.push(&options_object);
+        let params = Array::from_iter::<IntoIter<JsValue, 2>>(
+            [player_id.into(), options_object.into()].into_iter(),
+        );
 
         let player_instance =
             Reflect::construct(player_constructor.dyn_ref::<Function>().unwrap(), &params);
