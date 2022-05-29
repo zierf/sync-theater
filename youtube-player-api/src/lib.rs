@@ -4,14 +4,11 @@ extern crate alloc;
 
 mod wrapper;
 
-use alloc::boxed::Box;
-use alloc::rc::Rc;
+use alloc::{boxed::Box, rc::Rc};
 use core::cell::RefCell;
 
-use js_sys::{Array, Function, Reflect};
-use js_sys::{Object, Promise};
-use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
+use js_sys::{Array, Function, Object, Promise, Reflect};
+use wasm_bindgen::{prelude::*, JsCast};
 use web_sys::{console, window};
 
 pub use wrapper::{PlayerEvents, PlayerOptions, PlayerState, PlayerVars, YtPlayer};

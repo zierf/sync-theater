@@ -3,7 +3,7 @@ mod player_events;
 mod player_options;
 mod player_state;
 
-use alloc::{boxed::Box, rc::Rc, string::String};
+use alloc::{boxed::Box, rc::Rc};
 use core::{
     array::IntoIter,
     cell::RefCell,
@@ -149,15 +149,15 @@ impl YtPlayer {
         player_instance_option.map(cb);
     }
 
-    pub fn on(&self, event_name: String, handler_fn: JsValue) {
+    pub fn on(&self, event_name: &str, handler_fn: JsValue) {
         let handler_name = PlayerEvents::get_handler_name(event_name);
         self.run_player(|instance| instance.add_event_listener(handler_name.into(), handler_fn));
     }
 
     // FIXME find a way around broken removeEventListener(...)
     // see https://issuetracker.google.com/issues/35175764
-    /*pub fn off(&self, event_name: String, handler_fn: JsValue) {
-        let handler_name = self.get_handler_name(event_name);
+    /*pub fn off(&self, event_name: &str, handler_fn: JsValue) {
+        let handler_name = PlayerEvents::get_handler_name(event_name);
         self.run_player(|instance| instance.remove_event_listener(handler_name.into(), handler_fn));
     }*/
 
@@ -177,7 +177,7 @@ impl YtPlayer {
     }
 
     #[wasm_bindgen(js_name = changeVideo)]
-    pub fn change_video(&self, video_id: String) -> () {
+    pub fn change_video(&self, video_id: &str) -> () {
         self.run_player(|instance| instance.cue_video_by_id(video_id.into()));
     }
 

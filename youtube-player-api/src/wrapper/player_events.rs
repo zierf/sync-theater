@@ -16,8 +16,8 @@ impl PlayerEvents {
     pub const PLAYBACK_RATE_CHANGE: &'static str = "playbackRateChange";
     pub const API_CHANGE: &'static str = "apiChange";
 
-    pub fn get_handler_name(event_name: String) -> String {
-        let mut event_name = event_name.clone();
+    pub fn get_handler_name(event_name: &str) -> String {
+        let mut event_name = event_name.to_string();
 
         // convert first letter to uppercase
         let handler_name = event_name.remove(0).to_uppercase().to_string() + &event_name;
