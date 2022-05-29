@@ -6,7 +6,6 @@ mod player_state;
 use alloc::{boxed::Box, rc::Rc};
 use core::{
     array::IntoIter,
-    cell::RefCell,
     ops::Deref,
     sync::atomic::{AtomicBool, Ordering},
 };
@@ -26,10 +25,9 @@ use wasm_bindgen_futures::{future_to_promise, JsFuture};
 use web_sys::{console, window};
 
 #[wasm_bindgen(js_name = YoutubePlayer)]
-#[derive(Default)]
 pub struct YtPlayer {
     is_ready: Rc<AtomicBool>,
-    player_loaded: Rc<RefCell<Option<Promise>>>,
+    player_loaded: Rc<Promise>,
     player_instance: Rc<Option<PlayerInstance>>,
 }
 
@@ -45,7 +43,7 @@ impl YtPlayer {
         let is_ready_handle = Rc::new(AtomicBool::new(false));
         let is_ready_closure = is_ready_handle.clone();
 
-        let (player_ready, ready_resolver, _) = controllable_promise();
+        let (player_ready, ready_resolver, ready_rejecter) = controllable_promise();
 
         let player_options: Object = options;
         let checkable_options = JsValue::from(player_options.clone());
@@ -76,7 +74,7 @@ impl YtPlayer {
 
             console::log_1(&"Player Ready".into());
 
-            // signal api loading complete
+            // signal player loading complete
             ready_resolver
                 .borrow()
                 .as_ref()
@@ -108,12 +106,28 @@ impl YtPlayer {
         );
 
         let player_instance =
-            Reflect::construct(player_constructor.dyn_ref::<Function>().unwrap(), &params);
-        let player_instance = Some(player_instance.unwrap().unchecked_into::<PlayerInstance>());
+            Reflect::construct(player_constructor.dyn_ref::<Function>().unwrap(), &params).unwrap();
+
+        // player member "i" is not null on successful binding
+        let player_successful = Reflect::get(&player_instance, &"i".into()).unwrap();
+
+        let player_instance = if !player_successful.is_undefined() && !player_successful.is_null() {
+            Some(player_instance.unchecked_into::<PlayerInstance>())
+        } else {
+            // signal player loading failed
+            ready_rejecter
+                .borrow()
+                .as_ref()
+                .unwrap()
+                .apply(&JsValue::null(), &Array::new())
+                .unwrap();
+
+            None
+        };
 
         Self {
             is_ready: is_ready_handle,
-            player_loaded: Rc::new(RefCell::new(Some(player_ready))),
+            player_loaded: Rc::new(player_ready),
             player_instance: Rc::new(player_instance),
         }
     }
@@ -121,12 +135,13 @@ impl YtPlayer {
     pub fn create(player_id: &str, options: Object) -> Promise {
         let instance = Self::new(player_id, options);
 
-        let player_init_complete = instance.player_loaded.deref().borrow_mut().clone().unwrap();
+        let player_init_complete = instance.player_loaded.deref().clone();
 
         let is_ready = JsFuture::from(player_init_complete);
 
         future_to_promise(async move {
-            let _ = is_ready.await;
+            let _is_player_ready = is_ready.await?;
+
             Ok(instance.into())
         })
     }
@@ -209,9 +224,7 @@ where
     F: Fn(PlayerInstance) -> (),
 {
     Closure::wrap(Box::new(move |event: JsValue| {
-        #[allow(unused_unsafe)]
-        let event_target =
-            unsafe { js_sys::Reflect::get(&event, &wasm_bindgen::JsValue::from_str("target")) };
+        let event_target = Reflect::get(&event, &"target".into());
 
         // FIXME find a way to ensure it's a proper player instance
         // let yt_player = event_target.and_then(|event_target| event_target.dyn_into::<PlayerInstance>()).ok();
