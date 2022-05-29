@@ -10,7 +10,6 @@ use core::cell::RefCell;
 
 use js_sys::{Array, Function, Reflect};
 use js_sys::{Object, Promise};
-use serde_wasm_bindgen::to_value;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{console, window};
@@ -76,7 +75,7 @@ pub fn init_yt_api() -> Promise {
 
             let _success = Reflect::set(
                 &web_sys::window().unwrap(),
-                &to_value("onYouTubeIframeAPIReady").unwrap(),
+                &"onYouTubeIframeAPIReady".into(),
                 &ready_fn_to_restore.as_ref(),
             )
             .unwrap();
@@ -87,7 +86,7 @@ pub fn init_yt_api() -> Promise {
     // it will restore original ready handler if needed
     let _success = Reflect::set(
         &window,
-        &to_value("onYouTubeIframeAPIReady").unwrap(),
+        &"onYouTubeIframeAPIReady".into(),
         &new_handler.into_js_value(),
     )
     .unwrap();

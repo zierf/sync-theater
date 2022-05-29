@@ -20,7 +20,7 @@ pub use self::player_state::PlayerState;
 use self::api::PlayerInstance;
 
 use js_sys::{Array, Function, Object, Promise, Reflect};
-use serde_wasm_bindgen::{from_value, to_value};
+use serde_wasm_bindgen::from_value;
 use wasm_bindgen::{prelude::*, JsCast};
 use wasm_bindgen_futures::{future_to_promise, JsFuture};
 use web_sys::{console, window};
@@ -39,8 +39,8 @@ impl YtPlayer {
     pub fn new(player_id: &str, options: Object) -> Self {
         let window = window().unwrap();
 
-        let yt_global = Reflect::get(&window, &to_value("YT").unwrap()).unwrap();
-        let player_constructor = Reflect::get(&yt_global, &to_value("Player").unwrap()).unwrap();
+        let yt_global = Reflect::get(&window, &"YT".into()).unwrap();
+        let player_constructor = Reflect::get(&yt_global, &"Player".into()).unwrap();
 
         let is_ready_handle = Rc::new(AtomicBool::new(false));
         let is_ready_closure = is_ready_handle.clone();
@@ -58,7 +58,7 @@ impl YtPlayer {
 
         let mut event_options = Object::new();
 
-        let previous_events = Reflect::get(&options_object, &to_value("events").unwrap()).ok();
+        let previous_events = Reflect::get(&options_object, &"events".into()).ok();
         let checkable_events = JsValue::from(previous_events.clone());
 
         let previous_ready_handler = if let Some(previous_events) = previous_events {
@@ -66,7 +66,7 @@ impl YtPlayer {
                 event_options = previous_events.unchecked_into::<Object>();
             }
 
-            Reflect::get(&event_options, &to_value("onReady").unwrap()).ok()
+            Reflect::get(&event_options, &"onReady".into()).ok()
         } else {
             None
         };
@@ -97,15 +97,11 @@ impl YtPlayer {
 
         let _success = Reflect::set(
             &event_options,
-            &to_value("onReady").unwrap(),
+            &"onReady".into(),
             &new_handler.into_js_value(),
         );
 
-        let _success = Reflect::set(
-            &options_object,
-            &to_value("events").unwrap(),
-            &event_options,
-        );
+        let _success = Reflect::set(&options_object, &"events".into(), &event_options);
 
         let params = Array::from_iter::<IntoIter<JsValue, 2>>(
             [player_id.into(), options_object.into()].into_iter(),
@@ -140,7 +136,7 @@ impl YtPlayer {
             return self.player_instance.deref().as_ref();
         }
 
-        console::warn_1(&to_value("Player isn't ready yet!").unwrap());
+        console::warn_1(&"Player isn't ready yet!".into());
 
         None
     }
