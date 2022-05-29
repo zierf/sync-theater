@@ -117,7 +117,7 @@ impl Component for App {
                     });
 
                 self.player_instance.as_ref().as_ref().unwrap().on(
-                    PlayerEvents::get_handler_name(PlayerEvents::PLAYBACK_QUALITY_CHANGE.into()),
+                    &PlayerEvents::get_handler_name(PlayerEvents::PLAYBACK_QUALITY_CHANGE),
                     quality_change_handler.into_js_value(),
                 );
 
@@ -139,7 +139,7 @@ impl Component for App {
                 self.run_player(|instance| instance.stop_video());
             }
             Msg::ChangeVideo(video_id) => {
-                self.run_player(|instance| instance.change_video(video_id));
+                self.run_player(|instance| instance.change_video(&video_id));
             }
             Msg::ReadPlayerState => {
                 self.run_player(|instance| {
