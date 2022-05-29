@@ -20,33 +20,31 @@ declare global {
   await initYtApi();
   console.log('Module successfully initialized');
 
-  setTimeout(async () => {
-    const ytPlayer = await YoutubePlayer.create('yt-player', {
-      videoId: 'cE0wfjsybIQ',
-      width: 640,
-      height: 360,
-      playerVars: {
-        autoplay: 0,
-        controls: 1,
+  const ytPlayer = await YoutubePlayer.create('yt-player', {
+    videoId: 'cE0wfjsybIQ',
+    width: 640,
+    height: 360,
+    playerVars: {
+      autoplay: 0,
+      controls: 1,
+    },
+    events: {
+      onReady: (target: YoutubePlayerInstance) => {
+        console.log('Preserve custom player onReady() handler.');
       },
-      events: {
-        onReady: (target: YoutubePlayerInstance) => {
-          console.log('Preserve custom player onReady() handler.');
-        },
-      }
-    } as PlayerOptions);
+    }
+  } as PlayerOptions);
 
-    // set player in global namespace to control it via buttons
-    window.ytPlayer = ytPlayer;
+  // set player in global namespace to control it via buttons
+  window.ytPlayer = ytPlayer;
 
-    ytPlayer.on('stateChange', (event: CustomEvent) => {
-      console.log('onStateChange', event);
-    });
+  ytPlayer.on('stateChange', (event: CustomEvent) => {
+    console.log('onStateChange', event);
+  });
 
-    // ytPlayer.on('playbackQualityChange', (event) => {
-    // 	console.log('onPlaybackQualityChange', event);
-    // });
+  // ytPlayer.on('playbackQualityChange', (event) => {
+  // 	console.log('onPlaybackQualityChange', event);
+  // });
 
-    // ytPlayer.playVideo();
-  }, 1000);
+  // ytPlayer.playVideo();
 })();
