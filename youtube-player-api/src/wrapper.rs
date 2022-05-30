@@ -4,11 +4,7 @@ mod player_options;
 mod player_state;
 
 use alloc::{boxed::Box, rc::Rc};
-use core::{
-    array::IntoIter,
-    ops::Deref,
-    sync::atomic::{AtomicBool, Ordering},
-};
+use core::{array::IntoIter, cell::RefCell, ops::Deref};
 
 use crate::controllable_promise;
 
@@ -26,7 +22,7 @@ use web_sys::{console, window};
 
 #[wasm_bindgen(js_name = YoutubePlayer)]
 pub struct YtPlayer {
-    is_ready: Rc<AtomicBool>,
+    is_ready: Rc<RefCell<bool>>,
     player_loaded: Rc<Promise>,
     player_instance: Rc<Option<PlayerInstance>>,
 }
@@ -40,7 +36,7 @@ impl YtPlayer {
         let yt_global = Reflect::get(&window, &"YT".into()).unwrap();
         let player_constructor = Reflect::get(&yt_global, &"Player".into()).unwrap();
 
-        let is_ready_handle = Rc::new(AtomicBool::new(false));
+        let is_ready_handle = Rc::new(RefCell::new(false));
         let is_ready_closure = is_ready_handle.clone();
 
         let (player_ready, ready_resolver, ready_rejecter) = controllable_promise();
@@ -70,7 +66,7 @@ impl YtPlayer {
         };
 
         let new_handler = add_ready_event_handler(move |player_instance: PlayerInstance| {
-            is_ready_closure.store(true, Ordering::Relaxed);
+            *is_ready_closure.deref().borrow_mut() = true;
 
             console::log_1(&"Player Ready".into());
 
@@ -147,7 +143,7 @@ impl YtPlayer {
     }
 
     fn get_player_instance(&self) -> Option<&PlayerInstance> {
-        if self.is_ready.deref().load(Ordering::Relaxed) {
+        if *self.is_ready.borrow() {
             return self.player_instance.deref().as_ref();
         }
 
