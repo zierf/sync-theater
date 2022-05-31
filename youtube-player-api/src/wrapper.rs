@@ -4,7 +4,7 @@ mod player_options;
 mod player_state;
 
 use alloc::{boxed::Box, rc::Rc};
-use core::{array::IntoIter, cell::RefCell, ops::Deref};
+use core::{cell::RefCell, ops::Deref};
 
 use crate::controllable_promise;
 
@@ -24,7 +24,7 @@ use web_sys::{console, window};
 pub struct YtPlayer {
     is_ready: Rc<RefCell<bool>>,
     player_loaded: Rc<Promise>,
-    player_instance: Rc<Option<PlayerInstance>>,
+    player_instance: Option<PlayerInstance>,
 }
 
 #[wasm_bindgen(js_class = YoutubePlayer)]
@@ -65,7 +65,7 @@ impl YtPlayer {
             None
         };
 
-        let new_handler = add_ready_event_handler(move |player_instance: PlayerInstance| {
+        let new_handler = add_ready_event_handler(move |player_instance: &PlayerInstance| {
             *is_ready_closure.deref().borrow_mut() = true;
 
             console::log_1(&"Player Ready".into());
@@ -97,12 +97,12 @@ impl YtPlayer {
 
         let _success = Reflect::set(&options_object, &"events".into(), &event_options);
 
-        let params = Array::from_iter::<IntoIter<JsValue, 2>>(
-            [player_id.into(), options_object.into()].into_iter(),
-        );
-
-        let player_instance =
-            Reflect::construct(player_constructor.dyn_ref::<Function>().unwrap(), &params).unwrap();
+        // create a youtube player instance
+        let player_instance = Reflect::construct(
+            player_constructor.dyn_ref::<Function>().unwrap(),
+            &Array::from_iter([JsValue::from(player_id), options_object.into()]),
+        )
+        .unwrap();
 
         // player member "i" is not null on successful binding
         let player_successful = Reflect::get(&player_instance, &"i".into()).unwrap();
@@ -124,7 +124,7 @@ impl YtPlayer {
         Self {
             is_ready: is_ready_handle,
             player_loaded: Rc::new(player_ready),
-            player_instance: Rc::new(player_instance),
+            player_instance: player_instance,
         }
     }
 
@@ -144,7 +144,7 @@ impl YtPlayer {
 
     fn get_player_instance(&self) -> Option<&PlayerInstance> {
         if *self.is_ready.borrow() {
-            return self.player_instance.deref().as_ref();
+            return self.player_instance.as_ref();
         }
 
         console::warn_1(&"Player isn't ready yet!".into());
@@ -217,7 +217,7 @@ impl YtPlayer {
 fn add_ready_event_handler<F>(cb: F) -> Closure<dyn FnMut(JsValue)>
 where
     F: 'static,
-    F: Fn(PlayerInstance) -> (),
+    F: Fn(&PlayerInstance) -> (),
 {
     Closure::wrap(Box::new(move |event: JsValue| {
         let event_target = Reflect::get(&event, &"target".into());
@@ -227,7 +227,7 @@ where
         // yt_player.map(|player_instance| cb(player_instance));
 
         if let Ok(event_target) = event_target {
-            cb(event_target.unchecked_into::<PlayerInstance>());
+            cb(event_target.unchecked_ref::<PlayerInstance>());
         }
     }) as Box<dyn FnMut(JsValue)>)
 }
