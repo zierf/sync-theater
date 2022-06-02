@@ -1,3 +1,4 @@
+#![warn(missing_debug_implementations, rust_2018_idioms)] // TODO missing_docs
 #![cfg_attr(not(feature = "std"), no_std)]
 
 extern crate alloc;

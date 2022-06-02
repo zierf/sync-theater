@@ -7,6 +7,7 @@ extern "C" {
     pub type YtGlobalObject;
 
     #[wasm_bindgen(typescript_type = "YoutubePlayerInstance")]
+    #[derive(Debug)]
     pub type PlayerInstance;
 
     #[wasm_bindgen(method, js_name = addEventListener)]

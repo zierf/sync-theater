@@ -21,6 +21,7 @@ use wasm_bindgen_futures::{future_to_promise, JsFuture};
 use web_sys::{console, window};
 
 #[wasm_bindgen(js_name = YoutubePlayer)]
+#[derive(Debug)]
 pub struct YtPlayer {
     is_ready: Rc<RefCell<bool>>,
     player_loaded: Rc<Promise>,
