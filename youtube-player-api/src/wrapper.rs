@@ -163,7 +163,14 @@ impl YtPlayer {
 
     pub fn on(&self, event_name: &str, handler_fn: JsValue) {
         let handler_name = PlayerEvents::get_handler_name(event_name);
-        self.run_player(|instance| instance.add_event_listener(handler_name.into(), handler_fn));
+
+        match handler_name {
+            Ok(handler_name) =>
+                self.run_player(|instance| instance.add_event_listener(handler_name.into(), handler_fn)),
+            Err(error) => {
+                console::error_1(&error.into())
+            }
+        }
     }
 
     // FIXME find a way around broken removeEventListener(...)

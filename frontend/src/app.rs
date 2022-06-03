@@ -117,7 +117,7 @@ impl Component for App {
                     });
 
                 self.player_instance.as_ref().as_ref().unwrap().on(
-                    &PlayerEvents::get_handler_name(PlayerEvents::PLAYBACK_QUALITY_CHANGE),
+                    &PlayerEvents::get_handler_name(PlayerEvents::PLAYBACK_QUALITY_CHANGE).unwrap(),
                     quality_change_handler.into_js_value(),
                 );
 
