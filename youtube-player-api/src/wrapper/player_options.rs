@@ -91,3 +91,53 @@ impl From<PlayerOptions> for JsValue {
         options.unwrap()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use alloc::borrow::ToOwned;
+
+    #[test]
+    fn player_vars_default() {
+        // FIXME add all available fields from official youtube api
+        let player_vars = PlayerVars::new();
+
+        assert_eq!(None, player_vars.autoplay);
+        assert_eq!(None, player_vars.controls);
+    }
+
+    #[test]
+    fn player_vars_set() {
+        // FIXME add all available fields from official youtube api
+        let player_vars = PlayerVars::new().autoplay(0).controls(1);
+
+        assert_eq!(Some(0), player_vars.autoplay);
+        assert_eq!(Some(1), player_vars.controls);
+    }
+
+    #[test]
+    fn player_options_default() {
+        let player_options = PlayerOptions::new();
+
+        assert_eq!(None, player_options.video_id);
+        assert_eq!(None, player_options.width);
+        assert_eq!(None, player_options.height);
+        assert_eq!(None, player_options.player_vars);
+    }
+
+    #[test]
+    fn player_options_set() {
+        let player_vars = PlayerVars::new();
+        let player_options = PlayerOptions::new()
+            .video_id("abcdefghij".to_owned())
+            .width(640)
+            .height(360)
+            .player_vars(player_vars.clone());
+
+        assert_eq!(Some("abcdefghij".to_owned()), player_options.video_id);
+        assert_eq!(Some(640), player_options.width);
+        assert_eq!(Some(360), player_options.height);
+        assert_eq!(Some(player_vars), player_options.player_vars);
+    }
+}
