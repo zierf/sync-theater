@@ -1,6 +1,6 @@
 // #[wasm_bindgen(typescript_type = "PlayerState")]
 #[non_exhaustive]
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct PlayerState;
 
 impl PlayerState {

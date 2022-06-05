@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::{JsCast, JsValue};
 
 // #[wasm_bindgen(typescript_type = "PlayerVars")]
-#[derive(Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct PlayerVars {
     pub autoplay: Option<i32>,
     pub controls: Option<i32>,
@@ -29,7 +29,7 @@ impl PlayerVars {
 }
 
 // #[wasm_bindgen(typescript_type = "PlayerOptions")]
-#[derive(Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct PlayerOptions {
     #[serde(rename = "videoId")]
     pub video_id: Option<String>,

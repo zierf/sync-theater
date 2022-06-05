@@ -2,7 +2,7 @@ use alloc::{borrow::ToOwned, string::String};
 
 // #[wasm_bindgen(typescript_type = "PlayerEvents")]
 #[non_exhaustive]
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct PlayerEvents;
 
 impl PlayerEvents {
