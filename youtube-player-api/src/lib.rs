@@ -17,10 +17,10 @@ use web_sys::{console, window};
 
 pub use wrapper::{PlayerEvents, PlayerOptions, PlayerState, PlayerVars, YtPlayer};
 
-// #[cfg(feature = "wee_alloc")]
-// // Use `wee_alloc` as the global allocator.
-// #[global_allocator]
-// static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+#[cfg(feature = "wee_alloc")]
+// Use `wee_alloc` as the global allocator.
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc<'_> = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen(js_name = initYtApi)]
 pub fn init_yt_api() -> Promise {
@@ -77,7 +77,7 @@ pub fn init_yt_api() -> Promise {
             let _success = Reflect::set(
                 &web_sys::window().unwrap(),
                 &"onYouTubeIframeAPIReady".into(),
-                &ready_fn_to_restore.as_ref(),
+                ready_fn_to_restore.as_ref(),
             )
             .unwrap();
         }
@@ -110,13 +110,15 @@ pub fn init_yt_api() -> Promise {
     api_ready
 }
 
+type PromiseConstructorFunction = Rc<RefCell<Option<Function>>>;
+
 fn controllable_promise() -> (
     Promise,
-    Rc<RefCell<Option<Function>>>,
-    Rc<RefCell<Option<Function>>>,
+    PromiseConstructorFunction,
+    PromiseConstructorFunction,
 ) {
-    let resolve_function: Rc<RefCell<Option<Function>>> = Rc::new(RefCell::new(None));
-    let reject_function: Rc<RefCell<Option<Function>>> = Rc::new(RefCell::new(None));
+    let resolve_function: PromiseConstructorFunction = Rc::new(RefCell::new(None));
+    let reject_function: PromiseConstructorFunction = Rc::new(RefCell::new(None));
 
     let promise_resolve = resolve_function.clone();
     let promise_reject = reject_function.clone();
@@ -137,7 +139,7 @@ fn get_yt_global() -> Result<Object, JsValue> {
     if let Ok(yt_global_object) = yt_global.dyn_into::<Object>() {
         let player_constructor = Reflect::get(&yt_global_object, &"Player".into())?;
 
-        if let Ok(_) = player_constructor.dyn_into::<Function>() {
+        if player_constructor.dyn_into::<Function>().is_ok() {
             return Ok(yt_global_object);
         }
     }

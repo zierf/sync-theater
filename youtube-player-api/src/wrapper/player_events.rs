@@ -14,7 +14,7 @@ impl PlayerEvents {
     pub const STATE_CHANGE: &'static str = "stateChange";
 
     pub fn get_handler_name(event_name: &str) -> Result<String, &'static str> {
-        if event_name.len() == 0 {
+        if event_name.is_empty(){
             return Err("Event name must not be empty!");
         }
 
@@ -29,7 +29,7 @@ impl PlayerEvents {
     }
 
     pub fn get_event_name(handler_name: &str) -> Result<String, &'static str> {
-        if handler_name.len() == 0 {
+        if handler_name.is_empty(){
             return Err("Handler name must not be empty!");
         }
 

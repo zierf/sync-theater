@@ -4,6 +4,11 @@ mod app;
 
 use app::{App, Props};
 
+#[cfg(feature = "wee_alloc")]
+// Use `wee_alloc` as the global allocator.
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc<'_> = wee_alloc::WeeAlloc::INIT;
+
 fn main() {
     #[cfg(feature = "stack_trace")]
     // enable feature "std" to show rust stack trace instead of cryptic "RuntimeError: unreachable executed"

@@ -37,7 +37,7 @@ impl App {
 
     fn run_player<F>(&self, cb: F)
     where
-        F: FnOnce(&YtPlayer) -> (),
+        F: FnOnce(&YtPlayer),
     {
         let player_instance_option = self.get_player_instance();
         player_instance_option.map(cb);
@@ -107,7 +107,7 @@ impl Component for App {
                     .height(360)
                     .player_vars(player_vars);
 
-                let player_instance = YtPlayer::new(&"yt-player".to_owned(), player_options.into());
+                let player_instance = YtPlayer::new("yt-player", player_options.into());
                 self.player_instance = Arc::new(Some(player_instance));
 
                 // FIXME handle events, currently not called
@@ -197,7 +197,7 @@ impl Component for App {
 // fn add_ready_event_handler<F>(cb: F) -> Closure<dyn FnMut(JsValue)>
 // where
 //     F: 'static,
-//     F: Fn(PlayerInstance) -> (),
+//     F: Fn(PlayerInstance),
 // {
 //     Closure::wrap(Box::new(move |event: JsValue| {
 //         #[allow(unused_unsafe)]
@@ -217,7 +217,7 @@ impl Component for App {
 // fn add_state_changed_event_handler<F>(cb: F) -> Closure<dyn FnMut(JsValue)>
 // where
 //     F: 'static,
-//     F: Fn(f64) -> (),
+//     F: Fn(f64),
 // {
 //     Closure::wrap(Box::new(move |event: JsValue| {
 //         #[allow(unused_unsafe)]
@@ -233,7 +233,7 @@ impl Component for App {
 fn add_quality_changed_event_handler<F>(cb: F) -> Closure<dyn FnMut(JsValue)>
 where
     F: 'static,
-    F: Fn(String) -> (),
+    F: Fn(String),
 {
     Closure::wrap(Box::new(move |event: JsValue| {
         #[allow(unused_unsafe)]
@@ -249,7 +249,7 @@ where
 // fn add_error_event_handler<F>(cb: F) -> Closure<dyn FnMut(JsValue)>
 // where
 //     F: 'static,
-//     F: Fn(JsValue) -> (),
+//     F: Fn(JsValue),
 // {
 //     Closure::wrap(Box::new(move |event: JsValue| {
 //         cb(event);

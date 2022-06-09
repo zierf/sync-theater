@@ -125,7 +125,7 @@ impl YtPlayer {
         Self {
             is_ready: is_ready_handle,
             player_loaded: Rc::new(player_ready),
-            player_instance: player_instance,
+            player_instance,
         }
     }
 
@@ -155,7 +155,7 @@ impl YtPlayer {
 
     fn run_player<F>(&self, cb: F)
     where
-        F: FnOnce(&PlayerInstance) -> (),
+        F: FnOnce(&PlayerInstance),
     {
         let player_instance_option = self.get_player_instance();
         player_instance_option.map(cb);
@@ -181,22 +181,22 @@ impl YtPlayer {
     }*/
 
     #[wasm_bindgen(js_name = playVideo)]
-    pub fn play_video(&self) -> () {
+    pub fn play_video(&self) {
         self.run_player(|instance| instance.play_video());
     }
 
     #[wasm_bindgen(js_name = pauseVideo)]
-    pub fn pause_video(&self) -> () {
+    pub fn pause_video(&self) {
         self.run_player(|instance| instance.pause_video());
     }
 
     #[wasm_bindgen(js_name = stopVideo)]
-    pub fn stop_video(&self) -> () {
+    pub fn stop_video(&self) {
         self.run_player(|instance| instance.stop_video());
     }
 
     #[wasm_bindgen(js_name = changeVideo)]
-    pub fn change_video(&self, video_id: &str) -> () {
+    pub fn change_video(&self, video_id: &str) {
         self.run_player(|instance| instance.cue_video_by_id(video_id.into()));
     }
 
@@ -225,7 +225,7 @@ impl YtPlayer {
 fn add_ready_event_handler<F>(cb: F) -> Closure<dyn FnMut(JsValue)>
 where
     F: 'static,
-    F: Fn(&PlayerInstance) -> (),
+    F: Fn(&PlayerInstance),
 {
     Closure::wrap(Box::new(move |event: JsValue| {
         let event_target = Reflect::get(&event, &"target".into());
