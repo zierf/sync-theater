@@ -13,9 +13,10 @@ extern "C" {
     #[wasm_bindgen(method, js_name = addEventListener)]
     pub fn add_event_listener(this: &PlayerInstance, event: JsString, listener: JsValue);
 
-    // FIXME removeEventListener(...) isn't working as expected
-    #[wasm_bindgen(method, js_name = removeEventListener)]
-    pub fn remove_event_listener(this: &PlayerInstance, event: JsString, listener: JsValue);
+    // TODO removeEventListener(...) isn't working as expected (see https://issuetracker.google.com/issues/35175764)
+    // Since the wrapper uses every handler only used once, it's not too important at the moment.
+    // #[wasm_bindgen(method, js_name = removeEventListener)]
+    // pub fn remove_event_listener(this: &PlayerInstance, event: JsString, listener: JsValue);
 
     #[wasm_bindgen(method, js_name = playVideo)]
     pub fn play_video(this: &PlayerInstance);
@@ -35,7 +36,7 @@ extern "C" {
 
 #[wasm_bindgen(typescript_custom_section)]
 const PLAYER_STATE: &'static str = r#"
-export enum PlayerState {
+export const enum PlayerState {
   UNSTARTED = -1,
   ENDED = 0,
   PLAYING = 1,
@@ -48,45 +49,64 @@ export enum PlayerState {
 #[wasm_bindgen(typescript_custom_section)]
 const PLAYER_VARS: &'static str = r#"
 export interface PlayerVars {
-  autoplay?: 0 | 1,
-  controls?: 0 | 1,
+  autoplay?: 0 | 1;
+  controls?: 0 | 1;
 }
 "#;
 
 #[wasm_bindgen(typescript_custom_section)]
 const PLAYER_OPTIONS: &'static str = r#"
 export interface PlayerOptions {
-  videoId?: string,
-  width?: number,
-  height?: number,
-  playerVars?: PlayerVars,
-  events?: PlayerEvents,
+  videoId?: string;
+  width?: number;
+  height?: number;
+  playerVars?: PlayerVars;
+  events?: PlayerEvents;
+}
+"#;
+
+#[wasm_bindgen(typescript_custom_section)]
+const PLAYER_EVENT_NAME: &'static str = r#"
+export const enum PlayerEventName {
+  READY = 'ready',
+  ERROR = 'error',
+  STATE_CHANGE = 'stateChange',
+  PLAYBACK_QUALITY_CHANGE = 'playbackQualityChange',
+  PLAYBACK_RATE_CHANGE = 'playbackRateChange',
+  API_CHANGE = 'apiChange',
 }
 "#;
 
 #[wasm_bindgen(typescript_custom_section)]
 const PLAYER_EVENTS: &'static str = r#"
-interface PlayerEvents {
-  onReady?: () => void,
-  onError?: () => void,
-  onStateChange?: () => void,
-  onPlaybackQualityChange?: () => void,
-  onPlaybackRateChange?: () => void,
-  onApiChange?: () => void,
+export interface PlayerEvents {
+  [key: PlayerEventName | string]: (event?: CustomEvent) => void;
+}
+"#;
+
+#[wasm_bindgen(typescript_custom_section)]
+const YouTube_PLAYER_EVENTS: &'static str = r#"
+interface YouTubePlayerEvents {
+  onReady?: () => void;
+  onError?: () => void;
+  onStateChange?: () => void;
+  onPlaybackQualityChange?: () => void;
+  onPlaybackRateChange?: () => void;
+  onApiChange?: () => void;
 }
 "#;
 
 #[wasm_bindgen(typescript_custom_section)]
 const YT_Global: &'static str = r#"
 interface YouTubePlayerConstructor {
-  new (playerId: string, options?: PlayerOptions): YoutubePlayerInstance
+  new (playerId: string, options?: PlayerOptions): YoutubePlayerInstance;
 }
 
 interface YtGlobal {
-  Player: YouTubePlayerConstructor,
+  Player: YouTubePlayerConstructor;
   PlayerState: {
     [key in keyof typeof PlayerState]: number;
-  },
+  };
 }
 
 declare global {
@@ -99,6 +119,8 @@ declare global {
 const YOUTUBE_PLAYER: &'static str = r#"
 export interface YoutubePlayerInstance {
   addEventListener(event: string, listener: (event: CustomEvent) => void): void;
+  removeEventListener(event: string, listener: (event: CustomEvent) => void): void;
+
   destroy(): void;
   getAvailablePlaybackRates(): ReadonlyArray<number>;
   getAvailableQualityLevels(): ReadonlyArray<string>;
@@ -180,7 +202,6 @@ export interface YoutubePlayerInstance {
   playVideo(): void;
   playVideoAt(index: number): void;
   previousVideo(): void;
-  removeEventListener(event: string, listener: (event: CustomEvent) => void): void;
   seekTo(seconds: number, allowSeekAhead: boolean): void;
   setLoop(loopPlaylists: boolean): void;
   setPlaybackQuality(suggestedQuality: string): void;
@@ -190,7 +211,5 @@ export interface YoutubePlayerInstance {
   setVolume(volume: number): void;
   stopVideo(): void;
   unMute(): void;
-  //on(eventType: 'stateChange', listener: (event: CustomEvent & { data: number }) => void): void;
-  //on(eventType: EventType, listener: (event: CustomEvent) => void): void;
 }
 "#;

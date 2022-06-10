@@ -54,7 +54,7 @@ pub fn init_yt_api() -> Promise {
     // create ready handler function specific for library
     let new_handler = Closure::wrap(Box::new(move || {
         // execute custom code for library
-        console::log_1(&"Youtube Player API ready".into());
+        console::info_1(&"Youtube Player API ready".into());
 
         let yt_global = get_yt_global().unwrap();
 

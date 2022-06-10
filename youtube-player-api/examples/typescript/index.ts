@@ -1,4 +1,4 @@
-import { initYtApi, YoutubePlayer, PlayerOptions, YoutubePlayerInstance } from '../../pkg/youtube_player_api';
+import { initYtApi, YoutubePlayer, PlayerEventName, PlayerOptions } from '../../pkg/youtube_player_api';
 
 declare global {
   interface Window {
@@ -30,7 +30,7 @@ declare global {
         controls: 1,
       },
       events: {
-        onReady: (target: YoutubePlayerInstance) => {
+        [PlayerEventName.READY]: () => {
           console.log('Preserve custom player onReady() handler.');
         },
       }
@@ -39,16 +39,16 @@ declare global {
     // set player in global namespace to control it via buttons
     window.ytPlayer = ytPlayer;
 
-    ytPlayer.on('stateChange', (event: CustomEvent) => {
+    ytPlayer.on(PlayerEventName.STATE_CHANGE, (event: CustomEvent) => {
       console.log('onStateChange', event);
     });
 
-    // ytPlayer.on('playbackQualityChange', (event) => {
-    // 	console.log('onPlaybackQualityChange', event);
-    // });
+    ytPlayer.on(PlayerEventName.PLAYBACK_QUALITY_CHANGE, (event: CustomEvent) => {
+      console.log('onPlaybackQualityChange', event);
+    });
 
     // ytPlayer.playVideo();
-  } catch(_err) {
+  } catch (_err) {
     console.error('Could not bind player!');
   }
 })();

@@ -3,10 +3,10 @@ mod player_events;
 mod player_options;
 mod player_state;
 
-use alloc::{boxed::Box, rc::Rc};
+use alloc::{borrow::ToOwned, boxed::Box, rc::Rc, string::String, vec, vec::Vec};
 use core::{cell::RefCell, ops::Deref};
 
-use crate::controllable_promise;
+use crate::{controllable_promise, PromiseConstructorFunction};
 
 pub use self::player_events::PlayerEvents;
 pub use self::player_options::{PlayerOptions, PlayerVars};
@@ -14,11 +14,20 @@ pub use self::player_state::PlayerState;
 
 use self::api::PlayerInstance;
 
+use hashbrown::HashMap;
 use js_sys::{Array, Function, Object, Promise, Reflect};
 use serde_wasm_bindgen::from_value;
 use wasm_bindgen::{prelude::*, JsCast};
 use wasm_bindgen_futures::{future_to_promise, JsFuture};
 use web_sys::{console, window};
+
+#[derive(Debug)]
+struct EventHandler {
+    namespace: Option<String>,
+    handler: Rc<Function>,
+}
+
+type EventHandlerHashmap = Rc<RefCell<HashMap<String, Vec<EventHandler>>>>;
 
 #[wasm_bindgen(js_name = YoutubePlayer)]
 #[derive(Debug)]
@@ -26,79 +35,110 @@ pub struct YtPlayer {
     is_ready: Rc<RefCell<bool>>,
     player_loaded: Rc<Promise>,
     player_instance: Option<PlayerInstance>,
+    event_handlers: EventHandlerHashmap,
 }
 
 #[wasm_bindgen(js_class = YoutubePlayer)]
 impl YtPlayer {
     #[wasm_bindgen(constructor)]
     pub fn new(player_id: &str, options: Object) -> Self {
-        let window = window().unwrap();
-
-        let yt_global = Reflect::get(&window, &"YT".into()).unwrap();
-        let player_constructor = Reflect::get(&yt_global, &"Player".into()).unwrap();
-
-        let is_ready_handle = Rc::new(RefCell::new(false));
-        let is_ready_closure = is_ready_handle.clone();
-
-        let (player_ready, ready_resolver, ready_rejecter) = controllable_promise();
+        // create new or use existing options object
+        let mut options_object = Object::new();
 
         let player_options: Object = options;
         let checkable_options = JsValue::from(player_options.clone());
-
-        let mut options_object = Object::new();
 
         if !checkable_options.is_undefined() && !checkable_options.is_null() {
             options_object = player_options;
         }
 
-        let mut event_options = Object::new();
+        // prepare flags and function to signal a ready player
+        let is_ready_handle = Rc::new(RefCell::new(false));
+        let (player_ready, ready_resolver, ready_rejecter) = controllable_promise();
 
-        let previous_events = Reflect::get(&options_object, &"events".into()).ok();
-        let checkable_events = JsValue::from(previous_events.clone());
+        let handlers: EventHandlerHashmap = Rc::new(RefCell::new(HashMap::new()));
 
-        let previous_ready_handler = if let Some(previous_events) = previous_events {
-            if !checkable_events.is_undefined() && !checkable_events.is_null() {
-                event_options = previous_events.unchecked_into::<Object>();
-            }
+        // add own wrapper ready event handler to list (loading signal for promise)
+        let new_handler = Self::create_ready_event_handler(is_ready_handle.clone(), ready_resolver);
 
-            Reflect::get(&event_options, &"onReady".into()).ok()
-        } else {
-            None
-        };
-
-        let new_handler = add_ready_event_handler(move |player_instance: &PlayerInstance| {
-            *is_ready_closure.deref().borrow_mut() = true;
-
-            console::log_1(&"Player Ready".into());
-
-            // signal player loading complete
-            ready_resolver
-                .borrow()
-                .as_ref()
-                .unwrap()
-                .apply(&JsValue::null(), &Array::new())
-                .unwrap();
-
-            if let Some(ready_handler_to_call) = previous_ready_handler
-                .as_ref()
-                .unwrap()
-                .dyn_ref::<Function>()
-            {
-                ready_handler_to_call
-                    .apply(&JsValue::null(), &Array::from_iter([player_instance]))
-                    .unwrap();
-            }
-        });
-
-        let _success = Reflect::set(
-            &event_options,
-            &"onReady".into(),
-            &new_handler.into_js_value(),
+        Self::add_event_handler_fn(
+            None,
+            handlers.clone(),
+            ("ready", None),
+            new_handler.into_js_value().unchecked_into::<Function>(),
         );
 
-        let _success = Reflect::set(&options_object, &"events".into(), &event_options);
+        // read given events from options
+        let previous_events = Reflect::get(&options_object, &"events".into()).ok();
+
+        if let Some(previous_events) = previous_events {
+            if !previous_events.is_undefined() && !previous_events.is_null() {
+                // delete old event property, don't forward to original API
+                let _success = Reflect::delete_property(&options_object, &"events".into()).unwrap();
+
+                // extract given events and add them to wrapper hashmap
+                let event_options = previous_events.dyn_into::<Object>();
+
+                if let Ok(event_options) = event_options {
+                    let property_names = Object::get_own_property_names(&event_options);
+
+                    for property_name in property_names.iter() {
+                        let event_name: String = from_value(property_name).unwrap();
+
+                        let descriptor = Object::get_own_property_descriptor(
+                            &event_options,
+                            &event_name.clone().into(),
+                        );
+
+                        let descriptor_value = Reflect::get(&descriptor, &"value".into()).unwrap();
+
+                        if let Ok(handler_fn) = descriptor_value.dyn_into::<Function>() {
+                            let namespaced_event = PlayerEvents::get_namespaced_event(&event_name);
+
+                            match namespaced_event {
+                                Ok(namespaced_event) => {
+                                    Self::add_event_handler_fn(
+                                        None,
+                                        handlers.clone(),
+                                        namespaced_event,
+                                        handler_fn,
+                                    );
+                                }
+                                Err(error) => console::error_1(&error.into()),
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // add all wrapper events to options
+        // events, like ready event, are provided before initialization
+        let events_object = Object::new();
+
+        for handler in handlers.deref().borrow().iter() {
+            let handler_name = PlayerEvents::get_handler_name(handler.0);
+            let handler_wrapper =
+                Self::create_event_handler_wrapper(handlers.clone(), handler.0).into_js_value();
+
+            match handler_name {
+                Ok(handler_name) => {
+                    if let Err(error) =
+                        Reflect::set(&events_object, &handler_name.into(), &handler_wrapper)
+                    {
+                        console::error_1(&error);
+                    }
+                }
+                Err(error) => console::error_1(&error.into()),
+            }
+        }
+
+        let _success = Reflect::set(&options_object, &"events".into(), &events_object);
 
         // create a youtube player instance
+        let yt_global = Reflect::get(&window().unwrap(), &"YT".into()).unwrap();
+        let player_constructor = Reflect::get(&yt_global, &"Player".into()).unwrap();
+
         let player_instance = Reflect::construct(
             player_constructor.dyn_ref::<Function>().unwrap(),
             &Array::from_iter([JsValue::from(player_id), options_object.into()]),
@@ -126,6 +166,7 @@ impl YtPlayer {
             is_ready: is_ready_handle,
             player_loaded: Rc::new(player_ready),
             player_instance,
+            event_handlers: handlers,
         }
     }
 
@@ -161,24 +202,147 @@ impl YtPlayer {
         player_instance_option.map(cb);
     }
 
-    pub fn on(&self, event_name: &str, handler_fn: JsValue) {
+    fn create_ready_event_handler(
+        is_ready: Rc<RefCell<bool>>,
+        ready_resolver: PromiseConstructorFunction,
+    ) -> Closure<dyn FnMut(JsValue)> {
+        Closure::wrap(Box::new(move |_event: JsValue| {
+            *is_ready.deref().borrow_mut() = true;
+
+            console::info_1(&"Player Instance Ready".into());
+
+            // signal player loading complete
+            ready_resolver
+                .borrow()
+                .as_ref()
+                .unwrap()
+                .apply(&JsValue::null(), &Array::new())
+                .unwrap();
+        }) as Box<dyn FnMut(JsValue)>)
+    }
+
+    fn create_event_handler_wrapper(
+        handler_hashmap: EventHandlerHashmap,
+        event_name: &str,
+    ) -> Closure<dyn FnMut(JsValue)> {
+        let event_name = event_name.to_owned();
+
+        let target_property = "target";
+
+        Closure::wrap(Box::new(move |event: JsValue| {
+            // remove target property (unwrapped Youtube API instance) from event
+            if Reflect::get(&event, &target_property.into()).is_ok() {
+                let _success = Reflect::delete_property(
+                    event.dyn_ref::<Object>().unwrap(),
+                    &target_property.into(),
+                )
+                .unwrap();
+            }
+
+            // only use event as parameter, if it still contains other data
+            let params = if Reflect::own_keys(&event).unwrap().length() > 0 {
+                Array::from_iter([event])
+            } else {
+                Array::new()
+            };
+
+            for handler in handler_hashmap.borrow().get(&event_name).unwrap().iter() {
+                handler.handler.apply(&JsValue::null(), &params).unwrap();
+            }
+        }) as Box<dyn FnMut(JsValue)>)
+    }
+
+    fn add_event_handler_fn(
+        instance: Option<&PlayerInstance>,
+        handler_hashmap: EventHandlerHashmap,
+        namespaced_event: (&str, Option<&str>),
+        handler_fn: Function,
+    ) {
+        let (event_name, namespace) = namespaced_event;
+
         let handler_name = PlayerEvents::get_handler_name(event_name);
 
         match handler_name {
-            Ok(handler_name) =>
-                self.run_player(|instance| instance.add_event_listener(handler_name.into(), handler_fn)),
-            Err(error) => {
-                console::error_1(&error.into())
+            Ok(handler_name) => {
+                let mut hashmap = handler_hashmap.deref().borrow_mut();
+
+                if !hashmap.contains_key(event_name) {
+                    hashmap.insert(event_name.to_owned(), vec![]);
+
+                    if let Some(instance) = instance {
+                        // add event handler wrapper to original Youtube API, if it has a brandnew key
+                        // doesn't use hashmap.entry(…).or_insert(…) with check for empty vector,
+                        // because vector could be empty after removing events too
+                        instance.add_event_listener(
+                            handler_name.into(),
+                            Self::create_event_handler_wrapper(handler_hashmap.clone(), event_name)
+                                .into_js_value(),
+                        );
+                    }
+                }
+
+                let handler_vec = hashmap.get_mut(event_name).unwrap();
+
+                // add event handler to handler list
+                handler_vec.push(EventHandler {
+                    namespace: namespace.map(|ns| ns.to_owned()),
+                    handler: Rc::new(handler_fn),
+                });
             }
+            Err(error) => console::error_1(&error.into()),
         }
     }
 
-    // FIXME find a way around broken removeEventListener(...)
-    // see https://issuetracker.google.com/issues/35175764
-    /*pub fn off(&self, event_name: &str, handler_fn: JsValue) {
-        let handler_name = PlayerEvents::get_handler_name(event_name);
-        self.run_player(|instance| instance.remove_event_listener(handler_name.into(), handler_fn));
-    }*/
+    pub fn on(&self, event_name: &str, handler_fn: JsValue) {
+        let namespaced_event = PlayerEvents::get_namespaced_event(event_name);
+
+        if let Err(error) = namespaced_event {
+            console::error_1(&error.into());
+            return;
+        }
+
+        if let Ok(handler_fn) = handler_fn.dyn_into::<Function>() {
+            self.run_player(move |instance| {
+                Self::add_event_handler_fn(
+                    Some(instance),
+                    self.event_handlers.clone(),
+                    namespaced_event.unwrap(),
+                    handler_fn,
+                );
+            });
+        }
+    }
+
+    pub fn off(&self, event_name: &str) {
+        let namespaced_event = PlayerEvents::get_namespaced_event(event_name);
+
+        if let Err(error) = namespaced_event {
+            console::error_1(&error.into());
+            return;
+        }
+
+        let (event_name, namespace) = namespaced_event.unwrap();
+
+        let mut hashmap = self.event_handlers.deref().borrow_mut();
+
+        if hashmap.contains_key(event_name) {
+            let handler_vec = hashmap.get_mut(event_name).unwrap();
+
+            match namespace {
+                Some(namespace) => {
+                    // remove all elements containing the namespace
+                    handler_vec.retain(|handler| {
+                        if let Some(handler_namespace) = &handler.namespace {
+                            return handler_namespace != namespace;
+                        }
+
+                        true
+                    });
+                }
+                None => handler_vec.clear(),
+            }
+        }
+    }
 
     #[wasm_bindgen(js_name = playVideo)]
     pub fn play_video(&self) {
@@ -211,31 +375,4 @@ impl YtPlayer {
 
         PlayerState::UNSTARTED
     }
-}
-
-// #[derive(Debug)]
-// pub struct YtPlayerOptionsEvents {
-//     on_ready: Closure<dyn FnMut(JsValue)>,
-//     on_state_change: Closure<dyn FnMut(JsValue)>,
-//     on_quality_change: Closure<dyn FnMut(JsValue)>,
-//     on_playback_rate_change: Closure<dyn FnMut(JsValue)>,
-//     on_error: Closure<dyn FnMut(JsValue)>,
-// }
-
-fn add_ready_event_handler<F>(cb: F) -> Closure<dyn FnMut(JsValue)>
-where
-    F: 'static,
-    F: Fn(&PlayerInstance),
-{
-    Closure::wrap(Box::new(move |event: JsValue| {
-        let event_target = Reflect::get(&event, &"target".into());
-
-        // FIXME find a way to ensure it's a proper player instance
-        // let yt_player = event_target.and_then(|event_target| event_target.dyn_into::<PlayerInstance>()).ok();
-        // yt_player.map(|player_instance| cb(player_instance));
-
-        if let Ok(event_target) = event_target {
-            cb(event_target.unchecked_ref::<PlayerInstance>());
-        }
-    }) as Box<dyn FnMut(JsValue)>)
 }

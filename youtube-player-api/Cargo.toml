@@ -16,6 +16,7 @@ std = ["dep:console_error_panic_hook"]
 
 [dependencies]
 console_error_panic_hook = { version="0.1.7", optional=true }
+hashbrown = "0.12.1"
 js-sys = "0.3.57"
 serde = { version = "1.0.137", features = ["derive"] }
 serde-wasm-bindgen = "0.4.3"

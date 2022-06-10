@@ -1,10 +1,12 @@
 use alloc::{borrow::ToOwned, string::String};
 
 // #[wasm_bindgen(typescript_type = "PlayerEvents")]
+// #[wasm_bindgen(js_name = PlayerEvents)]
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq)]
 pub struct PlayerEvents;
 
+// #[wasm_bindgen(js_class = PlayerEvents)]
 impl PlayerEvents {
     pub const API_CHANGE: &'static str = "apiChange";
     pub const ERROR: &'static str = "error";
@@ -44,6 +46,22 @@ impl PlayerEvents {
         event_name.push_str(&handler_name[3..handler_name.len()]);
 
         Ok(event_name)
+    }
+
+    pub fn get_namespaced_event(event_name: &str) -> Result<(&str, Option<&str>), &'static str> {
+        if event_name.is_empty(){
+            return Err("Event name must not be empty!");
+        }
+
+        let namespaced_event = event_name.split_once('.');
+
+        let namespaced_event = if let Some((event, namespace)) = namespaced_event {
+            (event, Some(namespace))
+        } else {
+            (event_name, None)
+        };
+
+        Ok(namespaced_event)
     }
 }
 
@@ -129,6 +147,33 @@ mod tests {
         let event_name: Result<String, &'static str> = PlayerEvents::get_event_name(handler_name);
 
         assert_eq!(true, event_name.is_err());
+    }
+
+    #[test]
+    fn get_namespaced_event() {
+        let namespace = "test.namespace";
+
+        // no namespace
+        let event_name = PlayerEvents::STATE_CHANGE.to_owned();
+        let event = PlayerEvents::get_namespaced_event(&event_name).unwrap();
+
+        assert_eq!(PlayerEvents::STATE_CHANGE, event.0);
+        assert_eq!(None, event.1);
+
+        // all after first dot is one namespace (no hierarchies)
+        let event_name = PlayerEvents::STATE_CHANGE.to_owned() + "." + namespace;
+        let namespaced_event = PlayerEvents::get_namespaced_event(&event_name).unwrap();
+
+        assert_eq!(PlayerEvents::STATE_CHANGE, namespaced_event.0);
+        assert_eq!(namespace, namespaced_event.1.unwrap());
+    }
+
+    #[test]
+    fn get_namespaced_event_empty() {
+        let event_name: &str = "";
+        let namespaced_event: Result<_, &'static str> = PlayerEvents::get_namespaced_event(event_name);
+
+        assert_eq!(true, namespaced_event.is_err());
     }
 
     // #[bench]
