@@ -2,7 +2,7 @@ import { initYtApi, YoutubePlayer, PlayerEventName, PlayerOptions } from '../../
 
 declare global {
   interface Window {
-    ytPlayer?: Promise<YoutubePlayer>;
+    ytPlayer?: YoutubePlayer;
   }
 }
 
@@ -16,9 +16,12 @@ declare global {
  * @link https://rustwasm.github.io/wasm-bindgen/examples/without-a-bundler.html
  */
 (async () => {
-  // load and initialize youtube player api
-  await initYtApi();
-  console.log('Module successfully initialized');
+  /*
+    Load and initialize Youtube Player API.
+    (only needed when calling via constructor "new YoutubePlayer(…)")
+  */
+  // await initYtApi();
+  // console.log('Module successfully initialized');
 
   try {
     const ytPlayer = await YoutubePlayer.create('yt-player', {

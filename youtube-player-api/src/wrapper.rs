@@ -6,7 +6,7 @@ mod player_state;
 use alloc::{borrow::ToOwned, boxed::Box, rc::Rc, string::String, vec, vec::Vec};
 use core::{cell::RefCell, ops::Deref};
 
-use crate::{controllable_promise, PromiseConstructorFunction};
+use crate::{controllable_promise, init_yt_api, PromiseConstructorFunction};
 
 pub use self::player_events::PlayerEvents;
 pub use self::player_options::{PlayerOptions, PlayerVars};
@@ -171,14 +171,15 @@ impl YtPlayer {
     }
 
     pub fn create(player_id: &str, options: Object) -> Promise {
-        let instance = Self::new(player_id, options);
-
-        let player_init_complete = instance.player_loaded.deref().clone();
-
-        let is_ready = JsFuture::from(player_init_complete);
+        let player_id = player_id.to_owned();
 
         future_to_promise(async move {
-            let _is_player_ready = is_ready.await?;
+            let _is_api_ready = JsFuture::from(init_yt_api()).await?;
+
+            let instance = Self::new(&player_id, options);
+
+            let player_init_complete = instance.player_loaded.deref().clone();
+            let _is_player_ready = JsFuture::from(player_init_complete).await?;
 
             Ok(instance.into())
         })
