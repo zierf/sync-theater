@@ -210,8 +210,6 @@ impl YtPlayer {
         Closure::wrap(Box::new(move |_event: JsValue| {
             *is_ready.deref().borrow_mut() = true;
 
-            console::info_1(&"Player Instance Ready".into());
-
             // signal player loading complete
             ready_resolver
                 .borrow()

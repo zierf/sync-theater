@@ -13,7 +13,7 @@ use core::cell::RefCell;
 
 use js_sys::{try_iter, Array, Function, Object, Promise, Reflect};
 use wasm_bindgen::{prelude::*, JsCast};
-use web_sys::{console, window, Element};
+use web_sys::{window, Element};
 
 pub use wrapper::{PlayerEvents, PlayerOptions, PlayerState, PlayerVars, YtPlayer};
 
@@ -81,8 +81,6 @@ pub fn init_yt_api() -> Promise {
     // can also run again if script already exists but YT global object hasn't fully laoded yet
     let new_handler = Closure::wrap(Box::new(move || {
         // execute custom code for library
-        console::info_1(&"Youtube Player API ready".into());
-
         let yt_global = get_yt_global().unwrap();
 
         // signal api loading complete
